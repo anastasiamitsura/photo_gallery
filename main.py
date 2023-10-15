@@ -4,6 +4,7 @@ from PyQt5.QtMultimediaWidgets import *
 import os
 import sys
 import time
+import csv
 
 
 class MainWindow(QMainWindow):
@@ -71,6 +72,13 @@ class MainWindow(QMainWindow):
     def click_photo(self):
 
         timestamp = time.strftime("%d-%b-%Y-%H_%M_%S")
+
+        with open("gallery.csv", mode="w", encoding='utf-8') as w_file:
+            names = ["Дата", "Фото"]
+            file_writer = csv.DictWriter(w_file, delimiter=",",
+                                         lineterminator="\r", fieldnames=names)
+            file_writer.writeheader()
+            file_writer.writerow({"Дата": timestamp, "Фото": bytes(self.capture.setBufferFormat())})
 
         self.capture.capture(os.path.join(self.save_path,
                                           "%s-%04d-%s.jpg" % (
