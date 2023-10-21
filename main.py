@@ -4,7 +4,7 @@ from PyQt5.QtMultimediaWidgets import *
 import os
 import sys
 import time
-import csv
+import sqlite3 as sl
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +58,21 @@ class MainWindow(QMainWindow):
         toolbar.setStyleSheet("background : white;")
         self.setWindowTitle("PyQt5 Cam")
 
+        self.con = sl.connect('gallery.db')
+
+        with self.con:
+            data = self.con.execute("select count(*) from sqlite_master where type='table' and name='photos'")
+            for row in data:
+                if row[0] == 0:
+                    self.con.execute("""
+                        CREATE TABLE photos (
+                            id INTEGER PRIMARY KEY
+                            photo BLOB NOT NULL,
+                        );
+                    """)
+        self.sqlite_insert_blob_query = """ INSERT INTO photos
+                                         (img) VALUES (?)"""
+
         self.show()
 
     def open_gallery(self):
@@ -82,15 +97,19 @@ class MainWindow(QMainWindow):
 
 
     def click_photo(self):
+        """with open(bytes(self.capture), "rb") as image:
+            f = image.read()
+            b = bytearray(f)
+        data = (b)
+        # добавляем запись в таблицу
+        with self.con:
+            self.con.executemany(self.sqlite_insert_blob_query, data)
+        with self.con:
+            data = self.con.execute("SELECT * FROM photos")
+            for row in data:
+                print(row)"""
 
         timestamp = time.strftime("%d-%b-%Y-%H_%M_%S")
-
-        with open("gallery.csv", mode="w", encoding='utf-8') as w_file:
-            names = ["Дата", "Фото"]
-            file_writer = csv.DictWriter(w_file, delimiter=",",
-                                         lineterminator="\r", fieldnames=names)
-            file_writer.writeheader()
-            file_writer.writerow({"Дата": timestamp, "Фото": bytes(self.capture.setBufferFormat())})
 
         self.capture.capture(os.path.join(self.save_path,
                                           "%s-%04d-%s.jpg" % (
@@ -135,6 +154,8 @@ class SecondWindow(QMainWindow):
         open_camera.triggered.connect(self.open_camera)
         toolbar.addAction(open_camera)
         toolbar.setStyleSheet("background : white;")
+
+        self.custom_layput = QGridLayout(self)
         self.setWindowTitle("PyQt5 Gallery")
 
         self.show()
