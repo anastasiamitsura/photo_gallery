@@ -47,10 +47,22 @@ class MainWindow(QMainWindow):
                                   for camera in self.available_cameras])
         camera_selector.currentIndexChanged.connect(self.select_camera)
         toolbar.addWidget(camera_selector)
+
+        open_gallery = QAction("Open Gallery",
+                                       self)
+        open_gallery.setStatusTip("Open gallery to see your picture")
+        open_gallery.triggered.connect(self.open_gallery)
+        toolbar.addAction(open_gallery)
+
         toolbar.setStyleSheet("background : white;")
         self.setWindowTitle("PyQt5 Cam")
 
         self.show()
+
+    def open_gallery(self):
+        self.window = SecondWindow()
+        self.hide()
+        self.window.show()
 
     def select_camera(self, i):
         self.camera = QCamera(self.available_cameras[i])
@@ -93,6 +105,36 @@ class MainWindow(QMainWindow):
     def alert(self, msg):
         error = QErrorMessage(self)
         error.showMessage(msg)
+
+class SecondWindow(QMainWindow):
+
+    def __init__(self):
+        super().__init__()
+
+        self.setGeometry(100, 100,
+                         800, 600)
+        self.setStyleSheet("background : lightgrey;")
+
+        self.status = QStatusBar()
+        self.status.setStyleSheet("background : white;")
+        self.setStatusBar(self.status)
+        self.save_path = ""
+        toolbar = QToolBar("Camera Tool Bar")
+        self.addToolBar(toolbar)
+        open_camera = QAction("Open Camera",
+                               self)
+        open_camera.setStatusTip("Open camera to take your picture")
+        open_camera.triggered.connect(self.open_camera)
+        toolbar.addAction(open_camera)
+        toolbar.setStyleSheet("background : white;")
+        self.setWindowTitle("PyQt5 Gallery")
+
+        self.show()
+
+    def open_camera(self):
+        self.window = MainWindow()
+        self.hide()
+        self.window.show()
 
 
 
