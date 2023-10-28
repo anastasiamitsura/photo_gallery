@@ -23,10 +23,12 @@ class MainWindow(QMainWindow):
         self.status.setStyleSheet("background : white;")
         self.setStatusBar(self.status)
         self.save_path = ""
+        self.open_path = ""
         self.viewfinder = QCameraViewfinder()
         self.viewfinder.show()
         self.setCentralWidget(self.viewfinder)
         self.select_camera(0)
+        self.timestamp = ""
         toolbar = QToolBar("Camera Tool Bar")
         self.addToolBar(toolbar)
         click_action = QAction("Click photo", self)
@@ -34,6 +36,14 @@ class MainWindow(QMainWindow):
         click_action.setToolTip("Capture picture")
         click_action.triggered.connect(self.click_photo)
         toolbar.addAction(click_action)
+
+        save_action = QAction("Save photo", self)
+        save_action.setStatusTip("This will capture picture")
+        save_action.setToolTip("Capture picture")
+        save_action.triggered.connect(self.saveToDataBase)
+        toolbar.addAction(save_action)
+
+
         change_folder_action = QAction("Change save location",
                                        self)
         change_folder_action.setStatusTip("Change folder where picture will be saved saved.")
@@ -71,7 +81,7 @@ class MainWindow(QMainWindow):
                         );
                     """)
         self.sqlite_insert_blob_query = """ INSERT INTO photos
-                                         (img) VALUES (?)"""
+                                         (photo) VALUES (?)"""
 
         self.show()
 
@@ -95,31 +105,46 @@ class MainWindow(QMainWindow):
         self.current_camera_name = self.available_cameras[i].description()
         self.save_seq = 0
 
+    def convertToBinaryData(self, filename):
 
-    def click_photo(self):
-        """with open(bytes(self.capture), "rb") as image:
-            f = image.read()
-            b = bytearray(f)
-        data = (b)
-        # добавляем запись в таблицу
+        # Convert binary format to images
+        # or files data
+        with open(filename, 'rb') as file:
+            blobData = file.read()
+        return blobData
+
+    def saveToDataBase(self):
+        image = os.path.join(self.save_path,
+                             "%s-%04d-%s.jpg" % (
+                                 self.current_camera_name,
+                                 self.save_seq - 1,
+                                 self.timestamp
+                             ))
+        print(image)
+        with open(image, "r") as image:
+            #в этом месте код перестаёт работать с ошибкой "TypeError: expected str, bytes or os.PathLike object, not TextIOWrapper"
+            #у меня так и не получилось разобраться с этой проблемой, подойду с ней в понедельник заранее
+            data = open(image)
         with self.con:
             self.con.executemany(self.sqlite_insert_blob_query, data)
         with self.con:
             data = self.con.execute("SELECT * FROM photos")
             for row in data:
-                print(row)"""
+                print(row)
 
-        timestamp = time.strftime("%d-%b-%Y-%H_%M_%S")
+
+
+    def click_photo(self):
+        print(self.save_path)
+        self.timestamp = time.strftime("%d-%b-%Y-%H_%M_%S")
 
         self.capture.capture(os.path.join(self.save_path,
                                           "%s-%04d-%s.jpg" % (
                                               self.current_camera_name,
                                               self.save_seq,
-                                              timestamp
+                                              self.timestamp
                                           )))
-
         self.save_seq += 1
-
 
     def change_folder(self):
         path = QFileDialog.getExistingDirectory(self,
